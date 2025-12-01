@@ -175,6 +175,16 @@ Estado de la US-5: COMPLETADA
 - UI con filtros interactivos.
 - Pruebas E2E con Cypress completadas.
 
+## Progreso de implementación (agent)
+- 2025-11-30: Inicio de implementación backend para US-6.
+	- Se añadió validación con `ListPurchasesQuery` en `src/controllers/purchase.controller.ts` para sanear `page`, `limit`, `sort`, `from`, `to`.
+	- Nuevas pruebas de integración en `src/tests/purchases.integration.test.ts` cubren paginación, ordenamiento y filtros de fechas, además de validación de query params.
+	- Suite completa (`npm test`) ejecutada en backend con éxito; cobertura global se mantiene arriba del umbral tras los casos agregados.
+
+Estado de la US-6: EN PROGRESO
+
+- [US-6] - Tarea pendiente (2025-11-30): Finalizar funcionalidades de frontend (UI y filtros), reforzar documentación Swagger y pruebas E2E según la DoD.
+
 ---
 
 ### US-7,Ver detalle de compra,E-4 Visualización de datos,
