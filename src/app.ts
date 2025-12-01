@@ -1,5 +1,6 @@
 import express from 'express';
 import morgan from 'morgan';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import healthRouter from './routes/health';
 import authRouter from './routes/auth.routes';
@@ -15,18 +16,17 @@ app.use(express.json({ limit: '1mb' }));
 // HTTP request logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Enable CORS for the frontend (default to http://localhost:5173)
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', FRONTEND_URL);
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  return next();
-});
+// Configure allowed origins from environment variable (comma-separated) or default
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
+  : [process.env.FRONTEND_URL || 'http://localhost:5173'];
+
+// Enable CORS for allowed origins
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
 // DB connection is performed by the server bootstrap to allow tests to control connections
 app.use('/health', healthRouter);
