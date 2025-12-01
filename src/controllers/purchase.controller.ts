@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { CreatePurchaseSchema } from '../validators/purchase.validator'
+import { CreatePurchaseSchema, ListPurchasesQuery } from '../validators/purchase.validator'
 import * as purchaseService from '../services/purchase.service'
 
 export async function createPurchase(req: Request, res: Response, next: NextFunction) {
@@ -21,16 +21,12 @@ export async function listPurchases(req: Request, res: Response) {
   const userId = (req as any).userId
   if (!userId) return res.status(401).json({ message: 'Unauthorized' })
 
-  const { page, limit, sort, from, to } = req.query as any
-  const opts = {
-    page: page ? Number(page) : undefined,
-    limit: limit ? Number(limit) : undefined,
-    sort: sort || undefined,
-    from: from || undefined,
-    to: to || undefined,
+  const parsed = ListPurchasesQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ errors: parsed.error.format() })
   }
 
-  const result = await purchaseService.listPurchases(userId, opts)
+  const result = await purchaseService.listPurchases(userId, parsed.data)
   return res.json({ data: result.docs, meta: { total: result.totalCount, page: result.page, limit: result.limit } })
 }
 
