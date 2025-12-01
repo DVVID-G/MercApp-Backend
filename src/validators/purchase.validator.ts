@@ -1,12 +1,21 @@
 import { z } from 'zod'
 
-export const PurchaseItemSchema = z.object({
+const PurchaseItemBase = z.object({
   productId: z.string().optional(),
-  name: z.string().min(1),
-  price: z.number().nonnegative(),
+  name: z.string().min(1).optional(),
+  price: z.number().nonnegative().optional(),
   quantity: z.number().int().min(1),
   umd: z.string().optional(),
 })
+
+// If productId is not provided, name and price are required.
+export const PurchaseItemSchema = PurchaseItemBase.refine(
+  (item) => {
+    if (item.productId) return true
+    return !!item.name && typeof item.price === 'number'
+  },
+  { message: 'Either productId or both name and price are required' }
+)
 
 export const CreatePurchaseSchema = z.object({
   items: z.array(PurchaseItemSchema).min(1),

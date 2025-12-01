@@ -126,6 +126,18 @@ Estado de la US-3: COMPLETADA
 - Pruebas unitarias backend ≥85%.
 - UI dinámica con botones + y - para cantidad.
 
+## Progreso de implementación (agent)
+- 2025-11-30: Desarrollo de US-4 en backend completado.
+	- Se añadió el modelo `Product` con campos `name`, `price`, `umd`, `gramaje`, `pum`, `barcode` y `categoria`.
+	- Hook pre-save para cálculo de `pum` implementado en `src/models/product.model.ts`.
+	- Rutas y controlador para `POST /products`, `GET /products` y `GET /products/barcode/:barcode` implementadas y protegidas con el middleware de autenticación.
+	- `createPurchase` en `src/services/purchase.service.ts` enriquece items con datos del `Product` cuando `productId` está presente (sobrescribe `price`, `name`, `umd`).
+	- Tests unitarios e integración para `Product` y `Purchase` añadidos en `src/tests/*` (incluyen model, service y controller). Pruebas relacionadas con US-4 pasan en el entorno local de desarrollo.
+
+Estado de la US-4: COMPLETADA
+
+- [US-4] - Tarea completada (2025-11-30): Implementado POST/GET products y enriquecimiento de items en compras; endpoints protegidos y pruebas integradas.
+
 ---
 
 ### US-5,Escanear producto,E-3 Escaneo de productos,

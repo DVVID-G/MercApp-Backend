@@ -116,3 +116,12 @@ flowchart TD
 Note: When triggered by **update memory bank**, I MUST review every memory bank file, even if some don't require updates. Focus particularly on activeContext.md and progress.md as they track current state.
 
 REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
+
+## Regla: Recursividad en instrucciones
+
+Cuando una tarea legítimamente requiere pasos recursivos (por ejemplo, procesar un árbol de dependencias, migraciones por lotes o resolver referencias anidadas), está permitido que el agente invoque una estrategia de trabajo recursiva siempre que:
+- Se documente el criterio de parada explícitamente en `activeContext.md`.
+- Cada llamada recursiva opere sobre una porción más pequeña del problema (acotamiento).
+- No se realicen llamadas externas peligrosas ni cambios irreversibles sin confirmación del usuario.
+
+Esta regla permite que el agente planifique y ejecute flujos recursivos controlados mientras mantiene trazabilidad y seguridad.
