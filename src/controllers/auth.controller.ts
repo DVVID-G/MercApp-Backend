@@ -1,13 +1,19 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { signupSchema } from '../validators/auth.validator';
 import * as authService from '../services/auth.service';
 import { loginSchema } from '../validators/login.validator';
 
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const parseResult = loginSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ errors: parseResult.error.format() });
+      // Friendly validation response
+      const formatted = parseResult.error.format();
+      const errors = Object.entries(formatted).map(([key, val]) => {
+        const entry = val as any;
+        return { field: key, messages: entry._errors || [] };
+      });
+      return res.status(400).json({ message: 'Validation failed', errors });
     }
 
     const { email, password } = parseResult.data;
@@ -25,15 +31,24 @@ export async function login(req: Request, res: Response) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('login error', err);
-    return res.status(500).json({ message: 'Error interno del servidor' });
+    return next(err);
   }
 }
 
-export async function signup(req: Request, res: Response) {
+export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
     const parseResult = signupSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ errors: parseResult.error.format() });
+      // Build a friendly list of field errors
+      const formatted = parseResult.error.format();
+      const errors: Array<{ field: string; messages: string[] }> = [];
+      for (const key of Object.keys(formatted)) {
+        const entry = (formatted as any)[key];
+        if (entry && entry._errors && entry._errors.length) {
+          errors.push({ field: key, messages: entry._errors });
+        }
+      }
+      return res.status(400).json({ message: 'Validation failed', errors });
     }
 
     const { name, email, password } = parseResult.data;
@@ -45,10 +60,10 @@ export async function signup(req: Request, res: Response) {
 
     const user = await authService.createUser(name, email, password);
 
-  return res.status(201).json({ id: user.id, name: user.name, email: user.email, createdAt: user.createdAt });
+    return res.status(201).json({ id: user.id, name: user.name, email: user.email, createdAt: user.createdAt });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('signup error', err);
-    return res.status(500).json({ message: 'Error interno del servidor' });
+    return next(err);
   }
 }

@@ -29,6 +29,7 @@ applyTo: '**'
 
 
 # Gitflow y commits
+- Antes de comenzar a desarrollar una nueva funcionalidad, **siempre** debes asegurarte de estar en la rama correcta.
 - Realizar commits atomicos y descriptivos siguiendo la convención **Conventional Commits**.
 - Usar ramas feature/bugfix basadas en develop y realizar pull requests para revisión antes de mergear a main.
 - Mantener el historial de Git limpio y comprensible, evitando merges innecesarios.
