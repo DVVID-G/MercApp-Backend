@@ -151,6 +151,17 @@ Estado de la US-4: COMPLETADA
 - Endpoint GET /products/:barcode retorna información.
 - Pruebas en dispositivos móviles Android/iOS.
 
+## Progreso de implementación (agent)
+- 2025-11-30: Implementación server-side mínima para US-5 completada.
+	- Se añadió endpoint `GET /products/barcode/:barcode` y pruebas TDD en `src/tests/product.controller.barcode.test.ts`.
+	- Se normalizó el parámetro `barcode` en `src/controllers/product.controller.ts` y se devuelve objeto plano desde Mongoose para una respuesta consistente.
+	- Se añadió test `src/tests/purchase.controller.productnotfound.test.ts` que cubre el caso de `productId` inexistente; `createPurchase` en `src/controllers/purchase.controller.ts` ahora propaga errores con `next(err)`.
+	- Cambios comiteados y empujados a la rama `feature/us-5-server-scanner-2025-12-01`.
+
+Estado de la US-5: COMPLETADA
+
+- [US-5] - Tarea completada (2025-11-30): Endpoint GET `/products/barcode/:barcode` implementado; tests específicos añadidos; controlador ajustado y cambios push en feature branch.
+
 ---
 
 ### US-6,Historial de compras,E-4 Visualización de datos,
