@@ -47,7 +47,6 @@ API — Endpoints documentados (para consumo del frontend)
 
 **Auth**
 - `POST /auth/signup` — registrar usuario
-  - Body: `{ "email": "user@example.com", "password": "secret" }`
   - Body: `{ "name": "User Name", "email": "user@example.com", "password": "secret", "confirmPassword": "secret" }`
   - Respuesta: 201 con el usuario (sin password) o 409 si el email ya existe.
 

@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
+/**
+ * Interfaz del documento Product en MongoDB.
+ */
 export interface IProduct extends Document {
   name: string
   price: number
@@ -24,12 +27,13 @@ const ProductSchema = new Schema<IProduct>(
   { timestamps: { createdAt: 'createdAt', updatedAt: false } }
 )
 
-// Calculate PUM automatically: pum = gramaje / price (when both provided and price > 0)
+/**
+ * Hook pre-save que calcula automáticamente el PUM (precio por unidad de medida)
+ * cuando `gramaje` y `price` están presentes y `price` > 0.
+ */
 ProductSchema.pre('save', function (next) {
-  // `this` is the document being saved
   const doc = this as IProduct & Document
   if (doc.gramaje != null && doc.price != null && doc.price > 0) {
-    // store as number (avoid division by zero)
     doc.pum = doc.gramaje / doc.price
   }
   next()

@@ -126,6 +126,18 @@ Estado de la US-3: COMPLETADA
 - Pruebas unitarias backend ≥85%.
 - UI dinámica con botones + y - para cantidad.
 
+## Progreso de implementación (agent)
+- 2025-11-30: Desarrollo de US-4 en backend completado.
+	- Se añadió el modelo `Product` con campos `name`, `price`, `umd`, `gramaje`, `pum`, `barcode` y `categoria`.
+	- Hook pre-save para cálculo de `pum` implementado en `src/models/product.model.ts`.
+	- Rutas y controlador para `POST /products`, `GET /products` y `GET /products/barcode/:barcode` implementadas y protegidas con el middleware de autenticación.
+	- `createPurchase` en `src/services/purchase.service.ts` enriquece items con datos del `Product` cuando `productId` está presente (sobrescribe `price`, `name`, `umd`).
+	- Tests unitarios e integración para `Product` y `Purchase` añadidos en `src/tests/*` (incluyen model, service y controller). Pruebas relacionadas con US-4 pasan en el entorno local de desarrollo.
+
+Estado de la US-4: COMPLETADA
+
+- [US-4] - Tarea completada (2025-11-30): Implementado POST/GET products y enriquecimiento de items en compras; endpoints protegidos y pruebas integradas.
+
 ---
 
 ### US-5,Escanear producto,E-3 Escaneo de productos,
@@ -138,6 +150,17 @@ Estado de la US-3: COMPLETADA
 - Uso de librería QuaggaJS o ZXing para escaneo.
 - Endpoint GET /products/:barcode retorna información.
 - Pruebas en dispositivos móviles Android/iOS.
+
+## Progreso de implementación (agent)
+- 2025-11-30: Implementación server-side mínima para US-5 completada.
+	- Se añadió endpoint `GET /products/barcode/:barcode` y pruebas TDD en `src/tests/product.controller.barcode.test.ts`.
+	- Se normalizó el parámetro `barcode` en `src/controllers/product.controller.ts` y se devuelve objeto plano desde Mongoose para una respuesta consistente.
+	- Se añadió test `src/tests/purchase.controller.productnotfound.test.ts` que cubre el caso de `productId` inexistente; `createPurchase` en `src/controllers/purchase.controller.ts` ahora propaga errores con `next(err)`.
+	- Cambios comiteados y empujados a la rama `feature/us-5-server-scanner-2025-12-01`.
+
+Estado de la US-5: COMPLETADA
+
+- [US-5] - Tarea completada (2025-11-30): Endpoint GET `/products/barcode/:barcode` implementado; tests específicos añadidos; controlador ajustado y cambios push en feature branch.
 
 ---
 
