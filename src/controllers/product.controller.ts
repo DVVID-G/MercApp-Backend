@@ -40,11 +40,13 @@ export async function listProducts(_req: Request, res: Response, next: NextFunct
  */
 export async function getProductByBarcode(req: Request, res: Response, next: NextFunction) {
   try {
-    const { barcode } = req.params
+    const raw = req.params.barcode
+    const barcode = raw ? String(raw).trim() : ''
     if (!barcode) return res.status(400).json({ message: 'Barcode is required' })
     const product = await productService.findByBarcode(barcode)
     if (!product) return res.status(404).json({ message: 'Product not found', barcode })
-    return res.status(200).json(product)
+    // return plain object to avoid mongoose internals
+    return res.status(200).json(product.toObject ? product.toObject() : product)
   } catch (err) {
     return next(err)
   }
