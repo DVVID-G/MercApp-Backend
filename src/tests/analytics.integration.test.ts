@@ -105,6 +105,11 @@ test('returns monthly and category aggregates for the authenticated user', async
   expect(res.body.data).toBeDefined()
   expect(Array.isArray(res.body.data.monthly)).toBe(true)
   expect(Array.isArray(res.body.data.categories)).toBe(true)
+  expect(Array.isArray(res.body.data.spendingByDayOfWeek)).toBe(true)
+  expect(res.body.data.monthlyComparison).toBeDefined()
+  expect(typeof res.body.data.purchaseFrequency).toBe('number')
+  expect(typeof res.body.data.spendingProjection).toBe('number')
+  expect(Array.isArray(res.body.data.brandDistribution)).toBe(true)
 
   const monthly = res.body.data.monthly
   const october = monthly.find((m: any) => m.month === '2025-10')

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import * as authController from '../controllers/auth.controller';
 import * as refreshController from '../controllers/refresh.controller';
+import authMiddleware from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.post('/signup', authController.signup);
 router.post('/login', loginLimiter, authController.login);
 router.post('/refresh', refreshController.refresh);
 router.post('/logout', refreshController.logout);
+router.get('/me', authMiddleware, authController.getMe);
 
 export default router;
