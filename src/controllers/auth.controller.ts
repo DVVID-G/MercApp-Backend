@@ -35,6 +35,24 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function getMe(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const user = await authService.getUserById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    return res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
     const parseResult = signupSchema.safeParse(req.body);
