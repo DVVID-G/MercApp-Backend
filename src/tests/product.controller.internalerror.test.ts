@@ -29,7 +29,7 @@ test('POST /products -> service throws => 500 and error bubbled', async () => {
   const password = await hashPassword('adminPass1!')
   await User.create({ name: 'A', email: 'a@example.com', passwordHash: password })
   const login = await request(app).post('/auth/login').send({ email: 'a@example.com', password: 'adminPass1!' })
-  const token = login.body.token
+  const token = login.body.accessToken
 
   const spy = jest.spyOn(productService, 'createProduct').mockImplementation(() => {
     throw new Error('service fail')
@@ -39,7 +39,7 @@ test('POST /products -> service throws => 500 and error bubbled', async () => {
     const res = await request(app)
       .post('/products')
       .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'Err', price: 5 })
+      .send({ name: 'Err', price: 5, marca: 'Test', packageSize: 100, umd: 'gramos', barcode: 'ERR001', categoria: 'Otros' })
 
     expect(res.status).toBe(500)
     expect(res.body).toHaveProperty('message', 'service fail')

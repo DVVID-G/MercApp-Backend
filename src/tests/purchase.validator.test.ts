@@ -1,21 +1,21 @@
 import { CreatePurchaseSchema } from '../validators/purchase.validator'
 
-test('purchase validator acepta item con productId sin name/price', () => {
-  const payload = { items: [{ productId: 'abc', quantity: 1 }] }
+test('purchase validator acepta item con todos los campos requeridos', () => {
+  const payload = { items: [{ name: 'Test', price: 10, quantity: 1, marca: 'Brand', packageSize: 100, umd: 'gramos', barcode: 'TEST001', categoria: 'Otros' }] }
   const res = CreatePurchaseSchema.safeParse(payload)
   expect(res.success).toBe(true)
 })
 
-test('purchase validator rechaza item sin productId y sin name/price', () => {
-  const payload = { items: [{ quantity: 1 }] }
+test('purchase validator rechaza item sin campos requeridos', () => {
+  const payload = { items: [{ name: 'X', price: 1.5, quantity: 2 }] }
   const res = CreatePurchaseSchema.safeParse(payload)
   expect(res.success).toBe(false)
 })
 
-test('purchase validator acepta item con name y price cuando no hay productId', () => {
-  const payload = { items: [{ name: 'X', price: 1.5, quantity: 2 }] }
+test('purchase validator rechaza item sin marca', () => {
+  const payload = { items: [{ name: 'X', price: 1.5, quantity: 2, packageSize: 100, umd: 'gramos', barcode: 'TEST001', categoria: 'Otros' }] }
   const res = CreatePurchaseSchema.safeParse(payload)
-  expect(res.success).toBe(true)
+  expect(res.success).toBe(false)
 })
 
 test('ListPurchasesQuery preprocess convierte strings a numeros y acepta valores validos', () => {

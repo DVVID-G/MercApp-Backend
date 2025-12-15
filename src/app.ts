@@ -6,6 +6,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth.routes';
 import purchasesRouter from './routes/purchases.routes';
 import productsRouter from './routes/products.routes';
+import analyticsRouter from './routes/analytics.routes';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/purchases', purchasesRouter);
 app.use('/products', productsRouter);
+app.use('/analytics', analyticsRouter);
 
 app.get('/', (_req, res) => {
   res.json({ status: 'ok', service: 'MercApp' });

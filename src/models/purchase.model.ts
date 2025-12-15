@@ -3,9 +3,14 @@ import mongoose, { Schema, Document } from 'mongoose'
 export interface IPurchaseItem {
   productId?: string
   name: string
+  marca: string
   price: number
   quantity: number
-  umd?: string
+  packageSize: number
+  pum?: number
+  umd: string
+  barcode: string
+  categoria: string
 }
 
 export interface IPurchase extends Document {
@@ -18,9 +23,14 @@ export interface IPurchase extends Document {
 const PurchaseItemSchema = new Schema<IPurchaseItem>({
   productId: { type: String },
   name: { type: String, required: true },
+  marca: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true },
-  umd: { type: String },
+  packageSize: { type: Number, required: true },
+  pum: { type: Number },
+  umd: { type: String, required: true },
+  barcode: { type: String, required: true },
+  categoria: { type: String, required: true },
 })
 
 const PurchaseSchema = new Schema<IPurchase>(

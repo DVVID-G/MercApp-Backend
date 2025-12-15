@@ -25,7 +25,7 @@ export async function refresh(req: Request, res: Response) {
     await authService.saveRefreshToken(user.id, newRefresh);
 
     const accessToken = authService.generateToken(user.id);
-    return res.status(200).json({ token: accessToken, refreshToken: newRefresh, expiresIn: process.env.JWT_EXPIRES_IN || '24h' });
+    return res.status(200).json({ accessToken, refreshToken: newRefresh, expiresIn: process.env.JWT_EXPIRES_IN || '24h' });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('refresh error', err);

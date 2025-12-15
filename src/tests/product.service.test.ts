@@ -21,7 +21,7 @@ beforeEach(async () => {
 })
 
 test('createProduct y findByBarcode funcionan correctamente', async () => {
-  const created = await productService.createProduct({ name: 'Queso', price: 10, barcode: 'ABC123' })
+  const created = await productService.createProduct({ name: 'Queso', price: 10, barcode: 'ABC123', marca: 'Test', packageSize: 250, umd: 'gramos', categoria: 'Lácteos' })
   expect(created).toHaveProperty('barcode', 'ABC123')
 
   const found = await productService.findByBarcode('ABC123')
@@ -30,7 +30,7 @@ test('createProduct y findByBarcode funcionan correctamente', async () => {
 })
 
 test('listProducts devuelve array', async () => {
-  await productService.createProduct({ name: 'Leche', price: 2 })
+  await productService.createProduct({ name: 'Leche', price: 2, marca: 'Alpina', packageSize: 1000, umd: 'ml', barcode: 'LECHE001', categoria: 'Lácteos' })
   const list = await productService.listProducts()
   expect(Array.isArray(list)).toBe(true)
   expect(list.length).toBeGreaterThanOrEqual(1)
