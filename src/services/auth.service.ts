@@ -48,6 +48,10 @@ export async function revokeRefreshToken(token: string): Promise<void> {
   await User.updateOne({ refreshTokens: token }, { $pull: { refreshTokens: token } }).exec();
 }
 
+export async function getUserById(userId: string): Promise<IUser | null> {
+  return User.findById(userId).select('-passwordHash -refreshTokens').exec();
+}
+
 export async function findUserByRefreshToken(token: string): Promise<IUser | null> {
   return User.findOne({ refreshTokens: token }).exec();
 }
