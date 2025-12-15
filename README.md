@@ -91,24 +91,65 @@ API — Endpoints documentados (para consumo del frontend)
   - Header: `Authorization: Bearer <accessToken>`
   - Respuesta: 200 con el `Purchase` si pertenece al usuario; 404 si no existe.
 
-**Products (HU-4 — planificación e implementación próxima)**
-- Objetivo: añadir recursos para gestionar productos que luego puedan referenciarse desde compras.
-- Endpoints planeados:
-  - `POST /products` — crear producto (requerido autenticación)
-    - Body: `{ "name": string, "price": number, "gramaje": number, "umd": string, "barcode"?: string }`
-    - Comportamiento: se calculará `pum = gramaje / price` y se almacenará (o se calcula on-demand según diseño). `barcode` será único si se provee.
-  - `GET /products` — listar productos
-  - `GET /products/:id` — obtener producto por id
+**Products** — Requiere autenticación
 
-- Reglas importantes (implementadas/planificadas):
-  - Solo usuarios autenticados pueden crear productos (confirmar si se requiere rol `admin` en el futuro).
-  - Si una `purchase.item` referencia `productId`, el `purchase.service` usará el `price` y `umd` del producto y calculará `total` con esos valores.
-  - PUM (Precio Unitario de Medida): definido por la regla solicitada — PUM = `gramaje / price` (nota: confirmar unidades para evitar confusión; actualmente se implementará tal cual).
+- `POST /products` — crear producto
+  - Header: `Authorization: Bearer <accessToken>`
+  - Body ejemplo:
+    ```json
+    {
+      "name": "Arroz Integral",
+      "price": 20000,
+      "packageSize": 1000,
+      "umd": "gramos",
+      "barcode": "7891234567890",
+      "categoria": "Alimentos",
+      "marca": "Diana"
+    }
+    ```
+  - Comportamiento: El sistema calcula automáticamente `pum = price / packageSize` cuando `packageSize > 0`. El campo `pum` se almacena y devuelve en las respuestas.
+  - Validación: `packageSize` debe ser positivo, `barcode` es único si se provee.
+  - Respuesta: 201 con el producto creado incluyendo `pum` calculado.
+
+- `GET /products` — listar productos
+  - Header: `Authorization: Bearer <accessToken>`
+  - Respuesta: 200 con array de productos (cada producto incluye `pum` calculado).
+
+- `GET /products/:id` — obtener producto por ID
+  - Header: `Authorization: Bearer <accessToken>`
+  - Respuesta: 200 con el producto o 404 si no existe.
+
+- `GET /products/search` — buscar productos por nombre o código de barras
+  - Header: `Authorization: Bearer <accessToken>`
+  - Query params: `q` (query string), `limit` (opcional, default 10)
+  - Respuesta: 200 con array de productos que coinciden.
+
+- `PUT /products/:id` — actualizar producto
+  - Header: `Authorization: Bearer <accessToken>`
+  - Body: Campos a actualizar (parcial)
+  - Comportamiento: Si se actualiza `price` o `packageSize`, `pum` se recalcula automáticamente.
+  - Respuesta: 200 con el producto actualizado.
+
+**Reglas importantes:**
+- **PUM (Precio por Unidad de Medida)**: Se calcula como `pum = price / packageSize`. Por ejemplo, un producto de 1000g a $20,000 tiene PUM = 20 (pesos por gramo).
+- **PackageSize**: Cantidad del producto en el paquete (ej: 1000 para 1kg).
+- **UMD (Unidad de Medida)**: String que indica cómo se vende el producto ("gramos", "kg", "libra", "litros", "ml", "unidad").
+- Solo usuarios autenticados pueden crear/modificar productos.
+- Si un `purchase.item` no referencia `productId`, se puede crear manualmente con `packageSize` y `umd`; el sistema enriquece automáticamente con datos del catálogo si encuentra coincidencias por código de barras o nombre+marca+umd.
 
 Modelo de datos (resumen)
 - `User` — email, password (hasheado), refreshTokens[]
-- `Purchase` — `userId`, `items[]`(productId?, name, price, quantity, umd), `total`, `createdAt`
-- `Product` (planificado) — `name`, `price`, `gramaje`, `pum`, `umd`, `barcode?`, timestamps
+- `Purchase` — `userId`, `items[]`(productId?, name, price, quantity, packageSize, umd, marca, barcode, categoria, pum), `total`, `createdAt`
+- `Product` — `name`, `price`, `packageSize`, `pum` (calculado), `umd`, `barcode` (único), `marca`, `categoria`, timestamps
+
+**Cálculo de PUM:**
+```typescript
+// Pre-save hook en Product model
+if (this.packageSize && this.packageSize > 0) {
+  this.pum = this.price / this.packageSize;
+}
+// Ejemplo: price=20000, packageSize=1000 → pum=20 (pesos/gramo)
+```
 
 Testing
 - Las pruebas de integración usan `mongodb-memory-server`. Ejecuta `npm test` para lanzar Jest.
