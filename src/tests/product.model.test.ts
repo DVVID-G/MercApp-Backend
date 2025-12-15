@@ -20,11 +20,11 @@ beforeEach(async () => {
 })
 
 test('calcula pum automáticamente al guardar', async () => {
-  const p = await Product.create({ name: 'Aceite', price: 20, gramaje: 100, umd: 'g' })
-  expect(p.pum).toBeCloseTo(100 / 20)
+  const p = await Product.create({ name: 'Aceite', price: 20, packageSize: 100, umd: 'g', marca: 'Test', barcode: 'TEST001', categoria: 'Condimentos' })
+  expect(p.pum).toBeCloseTo(20 / 100)
 })
 
 test('no calcula pum si price es 0', async () => {
-  const p = await Product.create({ name: 'Agua', price: 0, gramaje: 500 })
+  const p = await Product.create({ name: 'Agua', price: 0, packageSize: 500, umd: 'ml', marca: 'Test', barcode: 'TEST002', categoria: 'Bebidas' })
   expect(p.pum).toBeUndefined()
 })

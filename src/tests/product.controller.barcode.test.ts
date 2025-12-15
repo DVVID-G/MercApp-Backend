@@ -26,8 +26,10 @@ test('GET /products/barcode/:barcode -> 200 with product when exists', async () 
     name: 'Test Product',
     price: 1.5,
     umd: 'unidad',
-    pum: 1.5,
     barcode: 'BAR123',
+    marca: 'Test Brand',
+    packageSize: 1,
+    categoria: 'Otros'
   })
 
   const res = await request(app).get(`/products/barcode/${p.barcode}`)

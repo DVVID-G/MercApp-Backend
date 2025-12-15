@@ -2,34 +2,72 @@ import Purchase, { IPurchaseItem } from '../models/purchase.model'
 import * as productService from './product.service'
 
 /**
- * Crea una compra, enriqueciendo los items que referencian un `productId`
- * con los datos actuales del producto (price, name, umd). Si el producto
- * no existe, lanza un error.
+ * Crea una compra, auto-sincronizando productos al catálogo.
+ * 
+ * Para cada item:
+ * 1. Valida que tenga todos los campos requeridos (name, marca, price, packageSize, umd, barcode, categoria)
+ * 2. Busca o crea el producto en el catálogo usando findOrCreateFromPurchaseItem
+ * 3. Si el producto existe y el precio cambió, retorna flag priceChanged para notificar al frontend
+ * 4. Enriquece el item con productId, pum y otros datos del producto
+ * 
  * @param userId Id del usuario que realiza la compra
- * @param items Lista de items de la compra (pueden referenciar `productId`)
+ * @param items Lista de items de la compra
+ * @returns { purchase, priceWarnings } donde priceWarnings contiene items con precio diferente
  */
 export async function createPurchase(userId: string, items: Array<Partial<IPurchaseItem>>) {
-  // Enrich items that reference a productId with current product data (price, name, umd)
+  const priceWarnings: Array<{ itemIndex: number; catalogPrice: number; newPrice: number }> = []
+
+  // Auto-sync productos al catálogo y enriquecer items
   const enrichedItems = await Promise.all(
-    items.map(async (it) => {
-      if (it.productId) {
-        const p = await productService.findProductById(it.productId)
-        if (!p) throw new Error(`Product not found: ${it.productId}`)
-        return {
-          ...it,
-          price: p.price,
-          name: p.name,
-          umd: p.umd || it.umd,
-        } as IPurchaseItem
+    items.map(async (it, index) => {
+      // Validar campos requeridos
+      if (!it.name || !it.marca || !it.price || !it.packageSize || !it.umd || !it.barcode || !it.categoria) {
+        throw new Error(
+          `Item ${index}: Faltan campos requeridos (name, marca, price, packageSize, umd, barcode, categoria)`
+        )
       }
-      return it
+
+      // Buscar o crear producto en catálogo
+      const { product, created, priceChanged } = await productService.findOrCreateFromPurchaseItem({
+        name: it.name,
+        marca: it.marca,
+        price: it.price,
+        packageSize: it.packageSize,
+        umd: it.umd,
+        barcode: it.barcode,
+        categoria: it.categoria,
+      })
+
+      // Si el producto existía y el precio cambió, registrar warning
+      if (!created && priceChanged) {
+        priceWarnings.push({
+          itemIndex: index,
+          catalogPrice: product.price,
+          newPrice: it.price,
+        })
+      }
+
+      // Retornar item enriquecido con datos del catálogo
+      return {
+        productId: product._id.toString(),
+        name: product.name,
+        marca: product.marca,
+        price: it.price, // Usar el precio del item (puede ser diferente al catálogo)
+        quantity: it.quantity || 1,
+        packageSize: product.packageSize,
+        pum: product.pum,
+        umd: product.umd,
+        barcode: product.barcode,
+        categoria: product.categoria,
+      } as IPurchaseItem
     })
   )
 
   const total = enrichedItems.reduce((s, it) => s + (it.price || 0) * (it.quantity || 0), 0)
   const purchase = new Purchase({ userId, items: enrichedItems, total })
   await purchase.save()
-  return purchase
+  
+  return { purchase, priceWarnings }
 }
 
 export async function listPurchases(

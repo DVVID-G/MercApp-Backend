@@ -10,8 +10,20 @@ export async function createPurchase(req: Request, res: Response, next: NextFunc
     const parse = CreatePurchaseSchema.safeParse(req.body)
     if (!parse.success) return res.status(400).json({ errors: parse.error.format() })
 
-    const purchase = await purchaseService.createPurchase(userId, parse.data.items)
-    return res.status(201).json({ id: purchase.id, total: purchase.total, createdAt: purchase.createdAt })
+    const { purchase, priceWarnings } = await purchaseService.createPurchase(userId, parse.data.items)
+    
+    // Incluir warnings de precio si existen
+    const response: any = { 
+      id: purchase.id, 
+      total: purchase.total, 
+      createdAt: purchase.createdAt 
+    }
+    
+    if (priceWarnings.length > 0) {
+      response.priceWarnings = priceWarnings
+    }
+    
+    return res.status(201).json(response)
   } catch (err) {
     return next(err)
   }

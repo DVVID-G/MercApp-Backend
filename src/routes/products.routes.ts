@@ -6,6 +6,8 @@ const router = Router()
 
 router.post('/', authMiddleware, productController.createProduct)
 router.get('/', productController.listProducts)
+router.get('/search', productController.searchProducts)
 router.get('/barcode/:barcode', productController.getProductByBarcode)
+router.put('/:id', authMiddleware, productController.updateProduct)
 
 export default router

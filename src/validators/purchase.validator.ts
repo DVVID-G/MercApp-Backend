@@ -2,20 +2,19 @@ import { z } from 'zod'
 
 const PurchaseItemBase = z.object({
   productId: z.string().optional(),
-  name: z.string().min(1).optional(),
-  price: z.number().nonnegative().optional(),
+  name: z.string().min(1),
+  marca: z.string().min(1),
+  price: z.number().nonnegative(),
   quantity: z.number().int().min(1),
-  umd: z.string().optional(),
+  packageSize: z.number().positive(),
+  pum: z.number().optional(),
+  umd: z.string().min(1),
+  barcode: z.string().min(1),
+  categoria: z.string().min(1),
 })
 
-// If productId is not provided, name and price are required.
-export const PurchaseItemSchema = PurchaseItemBase.refine(
-  (item) => {
-    if (item.productId) return true
-    return !!item.name && typeof item.price === 'number'
-  },
-  { message: 'Either productId or both name and price are required' }
-)
+// Todos los campos son requeridos para auto-sync al catálogo
+export const PurchaseItemSchema = PurchaseItemBase
 
 export const CreatePurchaseSchema = z.object({
   items: z.array(PurchaseItemSchema).min(1),

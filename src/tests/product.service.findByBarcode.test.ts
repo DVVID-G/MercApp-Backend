@@ -21,7 +21,7 @@ beforeEach(async () => {
 
 describe('product.service findByBarcode helper (model-level)', () => {
   test('create product and find by barcode via model', async () => {
-    const p = await Product.create({ name: 'P2', price: 2, umd: 'u', barcode: 'B2' })
+    const p = await Product.create({ name: 'P2', price: 2, umd: 'u', barcode: 'B2', marca: 'Test Brand', packageSize: 100, categoria: 'Otros' })
     const found = await Product.findOne({ barcode: 'B2' }).lean()
     expect(found).not.toBeNull()
     expect((found as any).barcode).toBe('B2')

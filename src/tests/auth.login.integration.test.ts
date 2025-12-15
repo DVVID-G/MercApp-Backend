@@ -36,14 +36,14 @@ describe('POST /auth/login', () => {
       password: 'Aa123456!'
     });
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body).toHaveProperty('accessToken');
     expect(res.body).toHaveProperty('refreshToken');
     expect(res.body).toHaveProperty('expiresIn');
 
     // Use refresh token to obtain new access token
     const refreshRes = await request(app).post('/auth/refresh').send({ refreshToken: res.body.refreshToken });
     expect(refreshRes.status).toBe(200);
-    expect(refreshRes.body).toHaveProperty('token');
+    expect(refreshRes.body).toHaveProperty('accessToken');
     expect(refreshRes.body).toHaveProperty('refreshToken');
 
     // Logout should revoke the refresh token

@@ -38,7 +38,7 @@ test('POST /products payload inválido devuelve 400', async () => {
   const password = await hashPassword('p')
   const user = await User.create({ name: 'U', email: 'u@example.com', passwordHash: password })
   const login = await request(app).post('/auth/login').send({ email: 'u@example.com', password: 'p' })
-  const token = login.body.token
+  const token = login.body.accessToken
 
   const res = await request(app).post('/products').set('Authorization', `Bearer ${token}`).send({ price: -1 })
   expect(res.status).toBe(400)

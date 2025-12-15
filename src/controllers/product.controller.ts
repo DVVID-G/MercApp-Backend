@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import * as productService from '../services/product.service'
-import { createProductSchema } from '../validators/product.validator'
+import { createProductSchema, updateProductSchema, searchProductSchema } from '../validators/product.validator'
 
 /**
  * Controlador para crear un producto.
@@ -47,6 +47,51 @@ export async function getProductByBarcode(req: Request, res: Response, next: Nex
     if (!product) return res.status(404).json({ message: 'Product not found', barcode })
     // return plain object to avoid mongoose internals
     return res.status(200).json(product.toObject ? product.toObject() : product)
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/**
+ * Busca productos por nombre (texto).
+ * Query params: ?q=término&limit=10
+ */
+export async function searchProducts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = searchProductSchema.safeParse({
+      q: req.query.q,
+      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 10,
+    })
+
+    if (!parsed.success) {
+      return res.status(400).json({ message: 'Validation failed', errors: parsed.error.format() })
+    }
+
+    const products = await productService.searchByName(parsed.data.q, parsed.data.limit)
+    return res.status(200).json(products)
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/**
+ * Actualiza un producto por su ID.
+ */
+export async function updateProduct(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params
+    const parsed = updateProductSchema.safeParse(req.body)
+
+    if (!parsed.success) {
+      return res.status(400).json({ message: 'Validation failed', errors: parsed.error.format() })
+    }
+
+    const product = await productService.updateProduct(id, parsed.data)
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' })
+    }
+
+    return res.status(200).json(product)
   } catch (err) {
     return next(err)
   }

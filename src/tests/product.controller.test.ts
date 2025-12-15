@@ -30,12 +30,12 @@ test('POST /products protegido y GET /products y /products/barcode/:barcode', as
 
   const loginRes = await request(app).post('/auth/login').send({ email: 'admin@example.com', password: 'adminpass' })
   expect(loginRes.status).toBe(200)
-  const token = loginRes.body.token
+  const token = loginRes.body.accessToken
 
   const createRes = await request(app)
     .post('/products')
     .set('Authorization', `Bearer ${token}`)
-    .send({ name: 'Manteca', price: 3.5, barcode: 'BAR001' })
+    .send({ name: 'Manteca', price: 3.5, barcode: 'BAR001', marca: 'Test Brand', packageSize: 250, umd: 'gramos', categoria: 'Lácteos' })
   expect(createRes.status).toBe(201)
   expect(createRes.body).toHaveProperty('barcode', 'BAR001')
 

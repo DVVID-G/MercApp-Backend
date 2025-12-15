@@ -23,11 +23,11 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    const token = authService.generateToken(user.id);
+    const accessToken = authService.generateToken(user.id);
     const refreshToken = authService.generateRefreshToken(user.id);
     await authService.saveRefreshToken(user.id, refreshToken);
 
-    return res.status(200).json({ token, refreshToken, expiresIn: process.env.JWT_EXPIRES_IN || '24h', name: user.name, email: user.email });
+    return res.status(200).json({ accessToken, refreshToken, expiresIn: process.env.JWT_EXPIRES_IN || '24h', name: user.name, email: user.email });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('login error', err);

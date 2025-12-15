@@ -26,7 +26,7 @@ test('POST /purchases payload inválido por validator devuelve 400', async () =>
   const password = await hashPassword('buyer')
   await User.create({ name: 'B', email: 'b@example.com', passwordHash: password })
   const login = await request(app).post('/auth/login').send({ email: 'b@example.com', password: 'buyer' })
-  const token = login.body.token
+  const token = login.body.accessToken
 
   // item without productId and without name/price should fail
   const res = await request(app).post('/purchases').set('Authorization', `Bearer ${token}`).send({ items: [{ quantity: 1 }] })

@@ -33,12 +33,12 @@ test('create purchase (authenticated)', async () => {
   // login to get token
   const loginRes = await request(app).post('/auth/login').send({ email: 'buyer@example.com', password: 'secret123' })
   expect(loginRes.status).toBe(200)
-  const token = loginRes.body.token
+  const token = loginRes.body.accessToken
 
   const payload = {
     items: [
-      { name: 'Item A', price: 10.5, quantity: 2 },
-      { name: 'Item B', price: 5, quantity: 1 },
+      { name: 'Item A', price: 10.5, quantity: 2, marca: 'Test', packageSize: 100, umd: 'gramos', barcode: '1111111111111', categoria: 'Otros' },
+      { name: 'Item B', price: 5, quantity: 1, marca: 'Test', packageSize: 50, umd: 'unidad', barcode: '2222222222222', categoria: 'Otros' },
     ],
   }
 
@@ -53,7 +53,7 @@ test('create purchase (authenticated)', async () => {
 })
 
 test('create purchase unauthorized', async () => {
-  const res = await request(app).post('/purchases').send({ items: [{ name: 'x', price: 1, quantity: 1 }] })
+  const res = await request(app).post('/purchases').send({ items: [{ name: 'x', price: 1, quantity: 1, marca: 'Test', packageSize: 100, umd: 'gramos', barcode: '3333333333333', categoria: 'Otros' }] })
   expect(res.status).toBe(401)
 })
 
@@ -61,14 +61,14 @@ test('list purchases with pagination and detail', async () => {
   const password = await hashPassword('secret123')
   const user = await User.create({ name: 'Lister', email: 'lister@example.com', passwordHash: password })
   const loginRes = await request(app).post('/auth/login').send({ email: 'lister@example.com', password: 'secret123' })
-  const token = loginRes.body.token
+  const token = loginRes.body.accessToken
 
   // create several purchases
   for (let i = 0; i < 15; i++) {
     await request(app)
       .post('/purchases')
       .set('Authorization', `Bearer ${token}`)
-      .send({ items: [{ name: `Item ${i}`, price: 1 + i, quantity: 1 }] })
+      .send({ items: [{ name: `Item ${i}`, price: 1 + i, quantity: 1, marca: 'Test', packageSize: 100, umd: 'gramos', barcode: `444444444444${i}`, categoria: 'Otros' }] })
   }
 
   const listRes = await request(app).get('/purchases').set('Authorization', `Bearer ${token}`).query({ page: 2, limit: 5 })
@@ -89,14 +89,14 @@ test('list purchases respects sort and date filters', async () => {
   const password = await hashPassword('secret123')
   const user = await User.create({ name: 'Sorter', email: 'sorter@example.com', passwordHash: password })
   const loginRes = await request(app).post('/auth/login').send({ email: 'sorter@example.com', password: 'secret123' })
-  const token = loginRes.body.token
+  const token = loginRes.body.accessToken
 
   const ids: string[] = []
   for (let i = 0; i < 3; i++) {
     const res = await request(app)
       .post('/purchases')
       .set('Authorization', `Bearer ${token}`)
-      .send({ items: [{ name: `Order ${i}`, price: 10 + i, quantity: 1 }] })
+      .send({ items: [{ name: `Order ${i}`, price: 10 + i, quantity: 1, marca: 'Test', packageSize: 100, umd: 'gramos', barcode: `555555555555${i}`, categoria: 'Otros' }] })
     expect(res.status).toBe(201)
     ids.push(res.body.id)
   }
@@ -133,7 +133,7 @@ test('list purchases rejects invalid query params', async () => {
   const password = await hashPassword('secret123')
   await User.create({ name: 'Validator', email: 'validator@example.com', passwordHash: password })
   const loginRes = await request(app).post('/auth/login').send({ email: 'validator@example.com', password: 'secret123' })
-  const token = loginRes.body.token
+  const token = loginRes.body.accessToken
 
   const res = await request(app)
     .get('/purchases')

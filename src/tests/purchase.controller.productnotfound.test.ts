@@ -22,20 +22,16 @@ beforeEach(async () => {
   await User.deleteMany({})
 })
 
-test('POST /purchases -> productId does not exist => 500 (service error)', async () => {
+test('POST /purchases -> missing required fields => 400 (validation error)', async () => {
   const password = await hashPassword('adminPass1!')
   await User.create({ name: 'A', email: 'a@example.com', passwordHash: password })
   const login = await request(app).post('/auth/login').send({ email: 'a@example.com', password: 'adminPass1!' })
-  const token = login.body.token
+  const token = login.body.accessToken
 
-  const payload = { items: [{ productId: '000000000000000000000000', quantity: 1 }] }
+  // Missing required fields: marca, packageSize, umd, barcode, categoria
+  const payload = { items: [{ name: 'Test', price: 10, quantity: 1 }] }
 
-  const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-  try {
-    const res = await request(app).post('/purchases').set('Authorization', `Bearer ${token}`).send(payload)
-    expect(res.status).toBe(500)
-    expect(res.body).toHaveProperty('message')
-  } finally {
-    consoleSpy.mockRestore()
-  }
+  const res = await request(app).post('/purchases').set('Authorization', `Bearer ${token}`).send(payload)
+  expect(res.status).toBe(400)
+  expect(res.body).toHaveProperty('errors')
 })
