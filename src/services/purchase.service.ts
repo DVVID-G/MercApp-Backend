@@ -9,9 +9,9 @@ import * as productService from './product.service'
  * 2. Busca o crea el producto en el catálogo usando findOrCreateFromPurchaseItem
  * 3. Si el producto existe y el precio cambió, retorna flag priceChanged para notificar al frontend
  * 4. Enriquece el item con productId, pum y otros datos del producto
- * 5. Calcula el precio del item según el tipo:
- *    - Regular: price × quantity
- *    - Fruver: pum × quantity (en gramos)
+ * 5. Almacena el precio unitario en price según el tipo:
+ *    - Regular: price (precio por paquete)
+ *    - Fruver: pum (precio por gramo)
  * 
  * @param userId Id del usuario que realiza la compra
  * @param items Lista de items de la compra
@@ -74,12 +74,12 @@ export async function createPurchase(userId: string, items: Array<Partial<IPurch
         }
       }
 
-      // Calcular precio del item según tipo
-      let itemPrice = 0
+      // Almacenar precio unitario según tipo
+      let unitPrice = 0
       if (it.productType === 'regular') {
-        itemPrice = Math.round((it.price || 0) * (it.quantity || 1))
+        unitPrice = it.price || 0
       } else if (it.productType === 'fruver') {
-        itemPrice = Math.round((it.pum || 0) * (it.quantity || 0))
+        unitPrice = it.pum || 0
       }
 
       // Retornar item enriquecido
@@ -87,7 +87,7 @@ export async function createPurchase(userId: string, items: Array<Partial<IPurch
         productId: product?._id.toString(),
         name: it.name,
         marca: it.marca,
-        price: itemPrice,
+        price: unitPrice,
         quantity: it.quantity || 1,
         productType: it.productType,
         packageSize: it.productType === 'regular' ? it.packageSize : undefined,
@@ -99,7 +99,7 @@ export async function createPurchase(userId: string, items: Array<Partial<IPurch
     })
   )
 
-  const total = enrichedItems.reduce((s, it) => s + (it.price || 0), 0)
+  const total = enrichedItems.reduce((s, it) => s + ((it.price || 0) * (it.quantity || 0)), 0)
   const purchase = new Purchase({ userId, items: enrichedItems, total })
   await purchase.save()
   
