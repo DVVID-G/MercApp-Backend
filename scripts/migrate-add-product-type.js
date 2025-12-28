@@ -73,8 +73,9 @@ async function migrate() {
     // Step 4: Validación
     console.log('\n✔️  Step 4: Validando migración...');
     
+    const query = { productType: { $exists: false } };
     const missingTypeProducts = await mongoose.connection.db.collection('products')
-      .find({ productType: { $exists: false } }).count();
+      .countDocuments(query);
     
     if (missingTypeProducts > 0) {
       throw new Error(`❌ ${missingTypeProducts} productos sin productType`);

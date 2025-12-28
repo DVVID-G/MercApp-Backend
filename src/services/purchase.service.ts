@@ -36,8 +36,11 @@ export async function createPurchase(userId: string, items: Array<Partial<IPurch
           throw new Error(`Item ${index}: Producto regular requiere price, packageSize y barcode`)
         }
       } else if (it.productType === 'fruver') {
-        if (!it.pum) {
+        if (!it.pum || it.pum <= 0) {
           throw new Error(`Item ${index}: Producto fruver requiere pum`)
+        }
+        if (!it.quantity || typeof it.quantity !== 'number' || it.quantity <= 0) {
+          throw new Error(`Item ${index}: Producto fruver requiere pum y quantity > 0`)
         }
       }
 
