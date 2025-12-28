@@ -5,10 +5,13 @@ import * as productService from './product.service'
  * Crea una compra, auto-sincronizando productos al catálogo.
  * 
  * Para cada item:
- * 1. Valida que tenga todos los campos requeridos (name, marca, price, packageSize, umd, barcode, categoria)
+ * 1. Valida que tenga todos los campos requeridos según el tipo de producto
  * 2. Busca o crea el producto en el catálogo usando findOrCreateFromPurchaseItem
  * 3. Si el producto existe y el precio cambió, retorna flag priceChanged para notificar al frontend
  * 4. Enriquece el item con productId, pum y otros datos del producto
+ * 5. Calcula el precio del item según el tipo:
+ *    - Regular: price × quantity
+ *    - Fruver: pum × quantity (en gramos)
  * 
  * @param userId Id del usuario que realiza la compra
  * @param items Lista de items de la compra
@@ -20,50 +23,80 @@ export async function createPurchase(userId: string, items: Array<Partial<IPurch
   // Auto-sync productos al catálogo y enriquecer items
   const enrichedItems = await Promise.all(
     items.map(async (it, index) => {
-      // Validar campos requeridos
-      if (!it.name || !it.marca || !it.price || !it.packageSize || !it.umd || !it.barcode || !it.categoria) {
+      // Validar campos comunes requeridos
+      if (!it.name || !it.marca || !it.umd || !it.categoria || !it.productType) {
         throw new Error(
-          `Item ${index}: Faltan campos requeridos (name, marca, price, packageSize, umd, barcode, categoria)`
+          `Item ${index}: Faltan campos requeridos (name, marca, umd, categoria, productType)`
         )
       }
 
-      // Buscar o crear producto en catálogo
-      const { product, created, priceChanged } = await productService.findOrCreateFromPurchaseItem({
+      // Validar campos específicos según tipo
+      if (it.productType === 'regular') {
+        if (!it.price || !it.packageSize || !it.barcode) {
+          throw new Error(`Item ${index}: Producto regular requiere price, packageSize y barcode`)
+        }
+      } else if (it.productType === 'fruver') {
+        if (!it.pum) {
+          throw new Error(`Item ${index}: Producto fruver requiere pum`)
+        }
+      }
+
+      // Buscar producto por ID si existe
+      let product = null
+      if (it.productId) {
+        product = await productService.findProductById(it.productId)
+      }
+
+      // Si es regular con barcode, buscar o crear en catálogo
+      if (it.productType === 'regular' && it.barcode) {
+        const { product: catalogProduct, created, priceChanged } = await productService.findOrCreateFromPurchaseItem({
+          name: it.name,
+          marca: it.marca,
+          price: it.price!,
+          packageSize: it.packageSize!,
+          umd: it.umd,
+          barcode: it.barcode,
+          categoria: it.categoria,
+        })
+
+        product = catalogProduct
+
+        // Si el producto existía y el precio cambió, registrar warning
+        if (!created && priceChanged) {
+          priceWarnings.push({
+            itemIndex: index,
+            catalogPrice: catalogProduct.price || 0,
+            newPrice: it.price!,
+          })
+        }
+      }
+
+      // Calcular precio del item según tipo
+      let itemPrice = 0
+      if (it.productType === 'regular') {
+        itemPrice = Math.round((it.price || 0) * (it.quantity || 1))
+      } else if (it.productType === 'fruver') {
+        itemPrice = Math.round((it.pum || 0) * (it.quantity || 0))
+      }
+
+      // Retornar item enriquecido
+      return {
+        productId: product?._id.toString(),
         name: it.name,
         marca: it.marca,
-        price: it.price,
-        packageSize: it.packageSize,
+        price: itemPrice,
+        quantity: it.quantity || 1,
+        productType: it.productType,
+        packageSize: it.productType === 'regular' ? it.packageSize : undefined,
+        pum: it.pum || product?.pum,
         umd: it.umd,
         barcode: it.barcode,
         categoria: it.categoria,
-      })
-
-      // Si el producto existía y el precio cambió, registrar warning
-      if (!created && priceChanged) {
-        priceWarnings.push({
-          itemIndex: index,
-          catalogPrice: product.price,
-          newPrice: it.price,
-        })
-      }
-
-      // Retornar item enriquecido con datos del catálogo
-      return {
-        productId: product._id.toString(),
-        name: product.name,
-        marca: product.marca,
-        price: it.price, // Usar el precio del item (puede ser diferente al catálogo)
-        quantity: it.quantity || 1,
-        packageSize: product.packageSize,
-        pum: product.pum,
-        umd: product.umd,
-        barcode: product.barcode,
-        categoria: product.categoria,
       } as IPurchaseItem
     })
   )
 
-  const total = enrichedItems.reduce((s, it) => s + (it.price || 0) * (it.quantity || 0), 0)
+  const total = enrichedItems.reduce((s, it) => s + (it.price || 0), 0)
   const purchase = new Purchase({ userId, items: enrichedItems, total })
   await purchase.save()
   
