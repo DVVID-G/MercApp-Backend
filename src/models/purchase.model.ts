@@ -1,15 +1,18 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
+export type ProductType = 'regular' | 'fruver'
+
 export interface IPurchaseItem {
   productId?: string
   name: string
   marca: string
   price: number
   quantity: number
-  packageSize: number
+  productType: ProductType
+  packageSize?: number
   pum?: number
   umd: string
-  barcode: string
+  barcode?: string
   categoria: string
 }
 
@@ -26,10 +29,11 @@ const PurchaseItemSchema = new Schema<IPurchaseItem>({
   marca: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true },
-  packageSize: { type: Number, required: true },
+  productType: { type: String, required: true, enum: ['regular', 'fruver'] },
+  packageSize: { type: Number },
   pum: { type: Number },
   umd: { type: String, required: true },
-  barcode: { type: String, required: true },
+  barcode: { type: String },
   categoria: { type: String, required: true },
 })
 

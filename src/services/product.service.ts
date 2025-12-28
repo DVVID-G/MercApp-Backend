@@ -55,7 +55,7 @@ export async function findByNameBrandUmd(
  * Lógica de búsqueda:
  * 1. Si tiene barcode, buscar por barcode (prioridad)
  * 2. Si no existe, buscar por nombre + marca + umd
- * 3. Si no existe, crear nuevo producto
+ * 3. Si no existe, crear nuevo producto (asumiendo tipo 'regular' con productType)
  * 
  * @param item Datos del producto del item de compra.
  * @returns { product, created, priceChanged }
@@ -74,7 +74,8 @@ export async function findOrCreateFromPurchaseItem(item: {
 
   if (product) {
     // Producto existe, verificar si el precio cambió
-    const priceChanged = Math.abs(product.price - item.price) > 0.01
+    const productPrice = product.productType === 'regular' ? product.price : product.referencePrice
+    const priceChanged = Math.abs((productPrice || 0) - item.price) > 0.01
     return { product, created: false, priceChanged }
   }
 
@@ -83,11 +84,12 @@ export async function findOrCreateFromPurchaseItem(item: {
 
   if (product) {
     // Producto existe con diferentes datos, verificar precio
-    const priceChanged = Math.abs(product.price - item.price) > 0.01
+    const productPrice = product.productType === 'regular' ? product.price : product.referencePrice
+    const priceChanged = Math.abs((productPrice || 0) - item.price) > 0.01
     return { product, created: false, priceChanged }
   }
 
-  // 3. Crear nuevo producto
+  // 3. Crear nuevo producto (asumiendo regular con barcode)
   product = await createProduct({
     name: item.name,
     marca: item.marca,
@@ -96,24 +98,35 @@ export async function findOrCreateFromPurchaseItem(item: {
     umd: item.umd,
     barcode: item.barcode,
     categoria: item.categoria,
+    productType: 'regular',
   })
 
   return { product, created: true, priceChanged: false }
 }
 
 /**
- * Busca productos por nombre (texto) con límite.
- * Usa el índice de texto para búsqueda eficiente.
+ * Busca productos por nombre, marca o categoría usando búsqueda parcial (regex).
+ * Busca en múltiples campos para mayor flexibilidad.
  * @param query Término de búsqueda.
  * @param limit Número máximo de resultados (default: 10).
  */
 export async function searchByName(query: string, limit: number = 10): Promise<IProduct[]> {
-  return Product.find(
-    { $text: { $search: query } },
-    { score: { $meta: 'textScore' } }
-  )
-    .sort({ score: { $meta: 'textScore' } })
+  // Escapar caracteres especiales de regex
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  
+  // Crear regex case-insensitive para búsqueda parcial
+  const searchRegex = new RegExp(escapedQuery, 'i')
+  
+  // Buscar en name, marca y categoria
+  return Product.find({
+    $or: [
+      { name: searchRegex },
+      { marca: searchRegex },
+      { categoria: searchRegex }
+    ]
+  })
     .limit(limit)
+    .sort({ name: 1 }) // Ordenar alfabéticamente por nombre
     .exec()
 }
 
