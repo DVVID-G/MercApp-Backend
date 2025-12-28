@@ -24,7 +24,21 @@ beforeEach(async () => {
 })
 
 test('createPurchase enriquece items con datos del producto', async () => {
-  const prod = await productService.createProduct({ name: 'Café', price: 8.5, umd: 'g', marca: 'Juan Valdez', packageSize: 250, barcode: 'CAFE001', categoria: 'Bebidas' })
+  const prod = await productService.createProduct({ 
+    name: 'Café', 
+    price: 8.5, 
+    umd: 'g', 
+    marca: 'Juan Valdez', 
+    packageSize: 250, 
+    barcode: 'CAFE001', 
+    categoria: 'Bebidas',
+    productType: 'regular'
+  })
+
+  // Ensure price exists (it should for regular products)
+  if (!prod.price) {
+    throw new Error('Product price is required for regular products')
+  }
 
   const result = await purchaseService.createPurchase('user-1', [
     { name: prod.name, price: prod.price, quantity: 2, marca: prod.marca, packageSize: prod.packageSize, umd: prod.umd, barcode: prod.barcode, categoria: prod.categoria },
