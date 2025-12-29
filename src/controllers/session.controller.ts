@@ -14,16 +14,6 @@ export async function listSessions(req: Request, res: Response, next: NextFuncti
     }
 
     const sessions = await sessionService.findActiveSessionsByUserId(userId);
-    
-    // Get current session ID from refresh token if available
-    const authHeader = req.headers.authorization;
-    let currentSessionId: string | undefined;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      // For current session detection, we'd need to track it differently
-      // For now, we'll mark sessions based on matching refresh token
-      // This is a simplified approach - in production you might want to track current session differently
-    }
 
     const sessionsResponse = sessions.map(session => ({
       id: session._id.toString(),

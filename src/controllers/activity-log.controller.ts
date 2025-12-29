@@ -7,7 +7,7 @@ import { ActivityLogQuerySchema } from '../validators/activity-log.validator';
  */
 export async function getActivityLogs(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = (req as any).userId;
+    const userId = req.userId;
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }

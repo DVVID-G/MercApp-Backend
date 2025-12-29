@@ -13,12 +13,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   const token = auth.split(' ')[1]
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId?: string }
-    ;(req as any).userId = payload.userId
+    req.userId = payload.userId
     
     // Extract device information and attach to request for use in controllers
     const userAgent = req.headers['user-agent'] || 'Unknown'
-    ;(req as any).deviceInfo = parseDeviceInfo(userAgent)
-    ;(req as any).ipAddress = extractIpAddress(req)
+    req.deviceInfo = parseDeviceInfo(userAgent)
+    req.ipAddress = extractIpAddress(req)
     
     next()
   } catch (err) {
