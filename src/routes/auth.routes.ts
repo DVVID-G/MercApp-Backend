@@ -2,6 +2,8 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import * as authController from '../controllers/auth.controller';
 import * as refreshController from '../controllers/refresh.controller';
+import * as sessionController from '../controllers/session.controller';
+import * as activityLogController from '../controllers/activity-log.controller';
 import authMiddleware from '../middleware/auth.middleware';
 
 const router = Router();
@@ -17,5 +19,13 @@ router.post('/login', loginLimiter, authController.login);
 router.post('/refresh', refreshController.refresh);
 router.post('/logout', refreshController.logout);
 router.get('/me', authMiddleware, authController.getMe);
+
+// Session management routes
+router.get('/sessions', authMiddleware, sessionController.listSessions);
+router.delete('/sessions/:sessionId', authMiddleware, sessionController.revokeSession);
+router.delete('/sessions', authMiddleware, sessionController.revokeAllSessions);
+
+// Activity log routes
+router.get('/activity-logs', authMiddleware, activityLogController.getActivityLogs);
 
 export default router;
