@@ -177,3 +177,55 @@ export async function revokeAllSessionsAndLog(
 
   return revokedCount;
 }
+
+export async function updateUserInfo(
+  userId: string,
+  updates: { name?: string; email?: string }
+): Promise<IUser> {
+  // Check email uniqueness if email is being updated
+  if (updates.email) {
+    const existingUser = await findUserByEmail(updates.email);
+    if (existingUser && existingUser._id.toString() !== userId) {
+      throw new Error('Email already in use');
+    }
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: updates },
+    { new: true, runValidators: true }
+  ).exec();
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return user;
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const user = await User.findById(userId).exec();
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Verify current password
+  const match = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!match) {
+    throw new Error('Current password is incorrect');
+  }
+
+  // Check that new password is different
+  if (currentPassword === newPassword) {
+    throw new Error('New password must be different from current password');
+  }
+
+  // Hash and update password
+  const newPasswordHash = await hashPassword(newPassword);
+  await User.findByIdAndUpdate(userId, { passwordHash: newPasswordHash }).exec();
+}
+
