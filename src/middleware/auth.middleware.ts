@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
+import { parseDeviceInfo, extractIpAddress } from '../utils/device-parser'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret'
 
@@ -13,6 +14,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId?: string }
     ;(req as any).userId = payload.userId
+    
+    // Extract device information and attach to request for use in controllers
+    const userAgent = req.headers['user-agent'] || 'Unknown'
+    ;(req as any).deviceInfo = parseDeviceInfo(userAgent)
+    ;(req as any).ipAddress = extractIpAddress(req)
+    
     next()
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' })
