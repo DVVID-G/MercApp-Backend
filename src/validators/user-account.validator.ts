@@ -8,9 +8,10 @@ export const updateAccountSchema = z.object({
 });
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'La contraseña actual es obligatoria'),
+  currentPassword: z.string().trim().min(1, 'La contraseña actual es obligatoria'),
   newPassword: z
     .string()
+    .trim()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
     .regex(/[0-9]/, 'Debe contener al menos un número')
