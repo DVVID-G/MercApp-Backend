@@ -1,6 +1,9 @@
 import bcrypt from 'bcrypt';
 import User, { IUser } from '../models/user.model';
 import jwt from 'jsonwebtoken';
+import * as sessionService from './session.service';
+import * as activityLogService from './activity-log.service';
+import { IDeviceInfo } from '../models/session.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
@@ -55,3 +58,174 @@ export async function getUserById(userId: string): Promise<IUser | null> {
 export async function findUserByRefreshToken(token: string): Promise<IUser | null> {
   return User.findOne({ refreshTokens: token }).exec();
 }
+
+/**
+ * Create session and log login activity
+ * This is called during login flow
+ */
+export async function createSessionAndLogLogin(
+  userId: string,
+  refreshToken: string,
+  deviceInfo: IDeviceInfo,
+  ipAddress: string
+): Promise<string> {
+  // Create session record
+  const session = await sessionService.createSession({
+    userId,
+    refreshToken,
+    deviceInfo,
+    ipAddress
+  });
+
+  // Log login activity
+  await activityLogService.logLogin({
+    userId,
+    sessionId: session._id.toString(),
+    deviceInfo,
+    ipAddress
+  });
+
+  return session._id.toString();
+}
+
+/**
+ * Update session activity on token refresh
+ */
+export async function updateSessionOnRefresh(
+  refreshToken: string
+): Promise<void> {
+  const session = await sessionService.findSessionByRefreshToken(refreshToken);
+  if (session) {
+    await sessionService.updateSessionActivity(session._id.toString());
+  } else {
+    // Migration scenario: create session retroactively if missing
+    // This handles existing refresh tokens that don't have session records
+    const user = await findUserByRefreshToken(refreshToken);
+    if (user) {
+      // We need deviceInfo and ipAddress, but they're not available here
+      // This will be handled in the controller where we have access to request
+      // For now, we'll skip retroactive creation in the service
+    }
+  }
+}
+
+/**
+ * Revoke session and log logout activity
+ */
+export async function revokeSessionAndLogLogout(
+  sessionId: string,
+  userId: string,
+  deviceInfo: IDeviceInfo,
+  ipAddress: string,
+  reason?: string
+): Promise<void> {
+  // Revoke session
+  const session = await sessionService.revokeSession(sessionId);
+  if (session) {
+    // Revoke refresh token from user's array
+    await revokeRefreshToken(session.refreshToken);
+    
+    // Log logout activity
+    await activityLogService.logLogout({
+      userId,
+      sessionId,
+      deviceInfo,
+      ipAddress,
+      reason
+    });
+  }
+}
+
+/**
+ * Revoke all sessions and log activity
+ */
+export async function revokeAllSessionsAndLog(
+  userId: string,
+  deviceInfo: IDeviceInfo,
+  ipAddress: string,
+  excludeSessionId?: string
+): Promise<number> {
+  // Get sessions that will be revoked (for logging)
+  const sessions = await sessionService.findActiveSessionsByUserId(userId);
+  const sessionsToRevoke = excludeSessionId
+    ? sessions.filter(s => s._id.toString() !== excludeSessionId)
+    : sessions;
+
+  // Revoke all sessions
+  const revokedCount = await sessionService.revokeAllSessions(userId, excludeSessionId);
+
+  // Revoke all refresh tokens from user's array
+  const user = await User.findById(userId).exec();
+  if (user && user.refreshTokens) {
+    const tokensToRevoke = sessionsToRevoke.map(s => s.refreshToken);
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { refreshTokens: { $in: tokensToRevoke } } }
+    ).exec();
+  }
+
+  // Log session revocation for each session
+  for (const session of sessionsToRevoke) {
+    await activityLogService.logSessionRevoked({
+      userId,
+      sessionId: session._id.toString(),
+      deviceInfo: session.deviceInfo,
+      ipAddress: session.ipAddress,
+      reason: 'user_initiated'
+    });
+  }
+
+  return revokedCount;
+}
+
+export async function updateUserInfo(
+  userId: string,
+  updates: { name?: string; email?: string }
+): Promise<IUser> {
+  // Check email uniqueness if email is being updated
+  if (updates.email) {
+    const existingUser = await findUserByEmail(updates.email);
+    if (existingUser && existingUser._id.toString() !== userId) {
+      throw new Error('Email already in use');
+    }
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: updates },
+    { new: true, runValidators: true }
+  ).exec();
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return user;
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const user = await User.findById(userId).exec();
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Verify current password
+  const match = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!match) {
+    throw new Error('Current password is incorrect');
+  }
+
+  // Check that new password is different
+  if (currentPassword === newPassword) {
+    throw new Error('New password must be different from current password');
+  }
+
+  // Hash and update password
+  const newPasswordHash = await hashPassword(newPassword);
+  await User.findByIdAndUpdate(userId, { passwordHash: newPasswordHash }).exec();
+}
+

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { signupSchema } from '../validators/auth.validator';
 import * as authService from '../services/auth.service';
 import { loginSchema } from '../validators/login.validator';
+import { parseDeviceInfo, extractIpAddress } from '../utils/device-parser';
+import * as activityLogService from '../services/activity-log.service';
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
@@ -18,14 +20,35 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     const { email, password } = parseResult.data;
 
+    // Extract device info and IP address once for reuse
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const deviceInfo = parseDeviceInfo(userAgent);
+    const ipAddress = extractIpAddress(req);
+
     const user = await authService.verifyCredentials(email, password);
     if (!user) {
+      // Log failed login attempt
+      await activityLogService.logLoginFailed({
+        userId: null,
+        deviceInfo,
+        ipAddress,
+        reason: 'invalid_credentials'
+      });
+
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
     const accessToken = authService.generateToken(user.id);
     const refreshToken = authService.generateRefreshToken(user.id);
     await authService.saveRefreshToken(user.id, refreshToken);
+
+    // Create session and log login
+    await authService.createSessionAndLogLogin(
+      user.id,
+      refreshToken,
+      deviceInfo,
+      ipAddress
+    );
 
     return res.status(200).json({ accessToken, refreshToken, expiresIn: process.env.JWT_EXPIRES_IN || '24h', name: user.name, email: user.email });
   } catch (err) {
