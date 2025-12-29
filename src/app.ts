@@ -1,3 +1,7 @@
+// Cargar variables de entorno antes de cualquier otra importación
+// Esto garantiza que process.env esté disponible cuando se evalúa este módulo
+import './config/env';
+
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
@@ -6,8 +10,6 @@ import authRouter from './routes/auth.routes';
 import purchasesRouter from './routes/purchases.routes';
 import productsRouter from './routes/products.routes';
 import analyticsRouter from './routes/analytics.routes';
-
-// dotenv.config() se ejecuta en server.ts antes de las importaciones
 
 const app = express();
 
