@@ -1,3 +1,7 @@
+// Importar primero el módulo de configuración de entorno
+// para garantizar que dotenv.config() se ejecute antes de cualquier otra importación
+import './config/env';
+
 import app from './app';
 import { connectDb } from './db/mongoose';
 
