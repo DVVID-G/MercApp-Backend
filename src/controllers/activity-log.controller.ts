@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as activityLogService from '../services/activity-log.service';
+import { ActivityLogQuerySchema } from '../validators/activity-log.validator';
 
 /**
  * Get activity logs for the authenticated user
@@ -11,19 +12,21 @@ export async function getActivityLogs(req: Request, res: Response, next: NextFun
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const eventType = req.query.eventType as 'login' | 'logout' | 'session_revoked' | 'login_failed' | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
-    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
-    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+    const parsed = ActivityLogQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: parsed.error.format() 
+      });
+    }
 
     const result = await activityLogService.getUserActivityLogs({
       userId,
-      eventType,
-      limit,
-      offset,
-      startDate,
-      endDate
+      eventType: parsed.data.eventType,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate
     });
 
     const logsResponse = result.logs.map(log => ({
