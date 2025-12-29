@@ -4,6 +4,9 @@ import * as authController from '../controllers/auth.controller';
 import * as refreshController from '../controllers/refresh.controller';
 import * as sessionController from '../controllers/session.controller';
 import * as activityLogController from '../controllers/activity-log.controller';
+import * as userPreferencesController from '../controllers/user-preferences.controller';
+import * as userAccountController from '../controllers/user-account.controller';
+import * as customCategoryController from '../controllers/custom-category.controller';
 import authMiddleware from '../middleware/auth.middleware';
 
 const router = Router();
@@ -27,5 +30,19 @@ router.delete('/sessions', authMiddleware, sessionController.revokeAllSessions);
 
 // Activity log routes
 router.get('/activity-logs', authMiddleware, activityLogController.getActivityLogs);
+
+// User preferences routes
+router.get('/preferences', authMiddleware, userPreferencesController.getPreferences);
+router.put('/preferences', authMiddleware, userPreferencesController.updatePreferences);
+
+// Account management routes
+router.put('/me', authMiddleware, userAccountController.updateAccount);
+router.put('/password', authMiddleware, userAccountController.changePassword);
+
+// Custom categories routes
+router.get('/categories', authMiddleware, customCategoryController.listCategories);
+router.post('/categories', authMiddleware, customCategoryController.createCategory);
+router.put('/categories/:id', authMiddleware, customCategoryController.updateCategory);
+router.delete('/categories/:id', authMiddleware, customCategoryController.deleteCategory);
 
 export default router;
