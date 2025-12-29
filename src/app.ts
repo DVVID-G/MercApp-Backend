@@ -1,14 +1,13 @@
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import healthRouter from './routes/health';
 import authRouter from './routes/auth.routes';
 import purchasesRouter from './routes/purchases.routes';
 import productsRouter from './routes/products.routes';
 import analyticsRouter from './routes/analytics.routes';
 
-dotenv.config();
+// dotenv.config() se ejecuta en server.ts antes de las importaciones
 
 const app = express();
 

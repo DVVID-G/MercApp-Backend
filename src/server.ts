@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno ANTES de cualquier otra importación
+dotenv.config();
+
 import app from './app';
 import { connectDb } from './db/mongoose';
 
