@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const updateAccountSchema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio').trim().optional(),
-  email: z.string().email('Email inválido').trim().optional(),
+  name: z.string().trim().min(1, 'El nombre es obligatorio').optional(),
+  email: z.string().trim().email('Email inválido').optional(),
 }).refine((data) => data.name !== undefined || data.email !== undefined, {
   message: 'Debe proporcionar al menos un campo para actualizar',
 });

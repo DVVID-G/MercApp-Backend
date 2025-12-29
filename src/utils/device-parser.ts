@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
 import { IDeviceInfo } from '../models/session.model';
 
@@ -37,7 +38,7 @@ export function parseDeviceInfo(userAgent: string): IDeviceInfo {
  * @param req - Express request object
  * @returns IP address string
  */
-export function extractIpAddress(req: any): string {
+export function extractIpAddress(req: Request): string {
   // Check for X-Forwarded-For header (from proxy/load balancer)
   const forwardedFor = req.headers['x-forwarded-for'];
   if (forwardedFor) {

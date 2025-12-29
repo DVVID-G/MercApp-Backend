@@ -20,13 +20,14 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     const { email, password } = parseResult.data;
 
+    // Extract device info and IP address once for reuse
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const deviceInfo = parseDeviceInfo(userAgent);
+    const ipAddress = extractIpAddress(req);
+
     const user = await authService.verifyCredentials(email, password);
     if (!user) {
       // Log failed login attempt
-      const userAgent = req.headers['user-agent'] || 'Unknown';
-      const deviceInfo = parseDeviceInfo(userAgent);
-      const ipAddress = extractIpAddress(req);
-      
       await activityLogService.logLoginFailed({
         userId: null,
         deviceInfo,
@@ -42,10 +43,6 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     await authService.saveRefreshToken(user.id, refreshToken);
 
     // Create session and log login
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    const deviceInfo = parseDeviceInfo(userAgent);
-    const ipAddress = extractIpAddress(req);
-    
     await authService.createSessionAndLogLogin(
       user.id,
       refreshToken,
